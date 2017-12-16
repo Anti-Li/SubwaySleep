@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SUBWAY</title>
+    <meta charset="UTF-8"/>
+    <!--重要meta, 必须!-->
+    <meta name="viewport" content="width=320, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0,shrink-to-fit=no">
+    <script type="text/javascript" src="http://webapi.amap.com/subway?v=1.0&key=6868a7f09f58d698d778324a2df4ccc9&callback=cbk"></script>
+    <script>
+            var mySubway;
+            var startId = {}, endId = {};
+
+            //设置终点
+            function setEndStation(id) {
+                mySubway.stopAnimation();
+                mySubway.clearInfoWindow();
+                mySubway.setEnd(id, {});
+                endId = id;
+                route();
+            }
+
+            //设置起点
+            function setStartStation(lat, lng) {
+                //mySubway.getNearStation({lnglat: '116.3191270000,39.9766230000'})
+                var nearStation = mySubway.getNearStation({lnglat: lng+','+lat});// id
+                if(nearStation != false){
+                    mySubway.setStart(nearStation, {});
+                    startId = nearStation;
+                }
+                route();
+            }
+
+            //路线规划
+            function route(){
+                if (startId && endId) {
+                    mySubway.route(startId, endId, {});
+                    endId = {};
+                }
+            }
+          </script>
+</head>
+<body>
+<div id="mybox"></div>
+
+<script>
+            window.cbk = function() {
+                mySubway = subway("mybox", {
+                    adcode: 1100,
+                    theme: "colorful",
+                    client: 0,
+                    doubleclick: {
+                        switch: true
+                    }
+                });
+                //地铁加载完成，执行complete事件
+                mySubway.event.on("subway.complete", function(ev, info) {
+                    var id = info.id;
+                });
+
+                //点击站点，显示此站点的信息窗体
+                mySubway.event.on("station.touch", function(ev, info) {
+                    var id = info.id;
+                    mySubway.stopAnimation();
+                    mySubway.addInfoWindow(id, {
+                      isCustom: true,
+                      content: String.raw `<style>
+                          .amap-subway-api .mytip_wrap {
+                              position: absolute;
+                              left: -45px;
+                              bottom: 0;
+                          }
+                          .amap-subway-api .mytip_bady {
+                              width: 73px;
+                              padding: 0 8px;
+                              background: rgba(51,51,51,0.8);
+                              box-shadow: 0 0 6px 1px rgba(0,0,0,.3);
+                              border-radius: 4px;
+                          }
+                          .amap-subway-api .mytip_route {
+                              font-size: 12px;
+                              color: #fff;
+                          }
+                          .amap-subway-api .mytip_route .mytip_route_btn {
+                              line-height: 40px;
+                              padding-left: 22px;
+                          }
+                          .amap-subway-api .mytip_route .mytip_route_end {
+                              background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyBpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBXaW5kb3dzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjUwMTM2NDMzOTM0MjExRTVBMTVERDk2MDJFMUUyQjMyIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjUwMTM2NDM0OTM0MjExRTVBMTVERDk2MDJFMUUyQjMyIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NTAxMzY0MzE5MzQyMTFFNUExNUREOTYwMkUxRTJCMzIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NTAxMzY0MzI5MzQyMTFFNUExNUREOTYwMkUxRTJCMzIiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz49TJAAAAACmElEQVR42syYQUgVQRjHv533CIIwVPKSvBADpVCSoqhL0CGKoCjs4sn0EIiBpwjqFITSKXiJ0MFLFGKREGmHIBCjSLp1KRAeCILwMAkehIjv9f+Wb2V8b3d23zaj/eEPe5id/c18881+M97W0BClVBPcBh+Cc/AvuAAX4eU0HWbrbH8WvgL3wh2GdivwDDwLf4C3knSu6oD4Cn+G78eAsA7Dw/B7+AfcZwOGQ/FGIE6nDOdR+AX8De5KC9MlHVwnOzopg7pUL8wFebGN7OqAhG44KQyP4J286EpPJBGMMLxGXsH7ya0yso6OmWAeOwhNlA4KUCYMhrNlkHZXJ/Rv6jD3aG/E+9Y+HYY3qau2v+J1d5MaHSVqbTU1ywWLOYDp02NnC8QbRAQaGvznGPXqMOedgGSzVJmfp8rcXNwrvBFmlPbvcQMyPZ20AsgpeWjaQ5BAHeo/AfFnR9nYbXeALCykAfH/W1xclczlV5a8/n7/sTI5SVQum0GmptKOqaSkTIxWYyN5nZ3k9fSQNzCA/FMuQPzqUMnMrEQ2KRapPD5OtLGxA8gyCGspGOYnY7NCgcr5/DaQGhmxDbIczAzrY2xzDYja222CkBTt2zvwa/hPIqCJCaLNTaosLtoCYT3316B2bspHlYM1am4mWl+vyayU+gKfqy4hHsameaC1NVsgrLth9Qyn+Ngu1zKzevJUl51jiRazHfFR+JapBuZj6E3OeccgvByuVW+4YUcVPsBfdAj0G74Bf096iOMpPBPkv0XxAE9F9Ws63vIMXYYfJM6yaHH4n8kAl9Ie/LmTR/AR+GmijbFWvKEeh2/LAP/5SoQ7uQO3SLxfSijDtAq/lUxpkYT46eKyqCSXQDMhN1irxr9/Av0VYABc/8cn6/uWLgAAAABJRU5ErkJggg==) no-repeat left center;
+                              background-size: 18px 18px;
+                          }
+                          .amap-subway-api .mytip_footer {
+                              height: 10px;
+                              background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABcAAAALCAYAAACUPhZAAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAG5JREFUeNpiNDY2FmNgYJgDxFIM1AOvgDidCcpIAeJn1DQYiB8zIQlQwwK4wSAOE5oEJRagGIxuOCUWYBiMzXByLMBqMC7DSbEAp8H4DCfGArwGEzIcnwUEDSbGcGwWEGUwsYYjW3CBWINBACDAACkeLdxbVjieAAAAAElFTkSuQmCC) no-repeat center top;
+                              background-size: 21px 10px;
+                          }
+                      </style>
+                      <div class="mytip_wrap">
+                          <div class="mytip_bady">
+                              <div class="mytip_route">
+                                  <div class="mytip_route_btn mytip_route_end" data-type="end" onclick="setEndStation(`
+                      + info.id + String.raw`)">设为终点</div>
+                              </div>
+                          </div>
+                          <div class="mytip_footer">
+                          </div>
+                      </div>`
+                    });
+                    var center = mySubway.getStCenter(id);
+                    mySubway.setCenter(center);
+                  });
+
+                //点击线路名，高亮此线路
+                mySubway.event.on("lineName.touch", function(ev, info) {
+                    mySubway.showLine(info.id);
+                    var select_obj = qs('#g-select');
+                    mySubway.setFitView(select_obj);
+                    var center = mySubway.getSelectedLineCenter();
+                    mySubway.setCenter(center);
+                });
+
+                //点击空白, 关闭infowindow
+                mySubway.event.on("subway.touch", function() {
+                    mySubway.clearInfoWindow();
+                });
+            };
+        </script>
+</body>
+</html>
